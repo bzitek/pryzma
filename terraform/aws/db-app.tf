@@ -203,8 +203,15 @@ EOF
   })
 }
 
-variable "app_bucket_name"   { type = string }          # e.g., "my-lab-bucket-123"
-variable "app_bucket_prefix" { type = string, default = "" }  # e.g., "uploads/"
+variable "app_bucket_name" {
+  type = string
+  # e.g., "my-lab-bucket-123"
+}
+
+variable "app_bucket_prefix" {
+  type    = string
+  default = ""              # e.g., "uploads/"
+}
 
 locals {
   app_bucket_arn = "arn:aws:s3:::${var.app_bucket_name}"
@@ -216,7 +223,7 @@ resource "aws_iam_role_policy" "ec2policy" {
   policy = jsonencode({
     Version   = "2012-10-17"
     Statement = [
-      # 1) Minimal read only for EC2/RDS
+      # 1) Minimal read-only for EC2/RDS (Describe calls)
       {
         Sid      = "ReadOnlyDescribe"
         Effect   = "Allow"
@@ -224,22 +231,24 @@ resource "aws_iam_role_policy" "ec2policy" {
         Resource = "*"
       },
 
-      # 2) Read objects only from one prefix in one bucket
+      # 2) Read objects from only one prefix in one bucket
       {
         Sid      = "ReadFromAppBucket"
         Effect   = "Allow"
         Action   = ["s3:GetObject"]
-        Resource = ["${local.app_bucket_arn}/${var.app_bucket_prefix}*"]
+        Resource = "${local.app_bucket_arn}/${var.app_bucket_prefix}*"
       },
 
-      # 3) (Optional) allow listing keys on the bucket, scoped to that prefix
+      # 3) (Optional) Allow listing keys on the bucket, scoped to that prefix
       {
         Sid      = "ListAppBucket"
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = local.app_bucket_arn
+        Resource = local.app_bucket_arn            # bucket only (no /*)
         Condition = {
-          StringLike = { "s3:prefix" = ["${var.app_bucket_prefix}*"] }
+          StringLike = {
+            "s3:prefix" = ["${var.app_bucket_prefix}*"]
+          }
         }
       }
     ]
