@@ -124,6 +124,8 @@ resource "aws_s3_bucket" "logs" {
       }
     }
   }
+
+  
   force_destroy = true
   tags = merge({
     Name        = "${local.resource_prefix.value}-logs"
