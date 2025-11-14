@@ -1,5 +1,11 @@
 steps:
-  - name: gcr.io/gcb-iac-scanner/terraform-scanner
-    dir: .
-    entrypoint: terraform-iac-scan
-    args: ["--format=text"]
+  - name: python
+    entrypoint: bash
+    dir: terraform/gcp
+    args:
+      - -c
+      - |
+        pip install checkov && checkov -d . --quiet
+
+options:
+  logging: CLOUD_LOGGING_ONLY
