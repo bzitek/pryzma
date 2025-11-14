@@ -4,8 +4,7 @@ steps:
     dir: terraform/gcp
     args:
       - -c
-      - |
-        pip install checkov && checkov -d . --quiet
+      - pip install checkov --quiet && checkov -d . --quiet
 
 options:
   logging: CLOUD_LOGGING_ONLY
