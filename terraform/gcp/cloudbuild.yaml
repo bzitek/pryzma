@@ -1,0 +1,5 @@
+steps:
+  - name: gcr.io/gcb-iac-scanner/terraform-scanner
+    dir: .
+    entrypoint: terraform-iac-scan
+    args: ["--format=text"]
