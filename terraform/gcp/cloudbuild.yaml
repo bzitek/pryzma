@@ -5,5 +5,8 @@ steps:
   args:
     - -c
     - |
-      pip install checkov --quiet
-      checkov -d . --quiet --soft-fail
+        pip install checkov --quiet
+        checkov -d . --quiet --soft-fail
+
+options:
+  logging: CLOUD_LOGGING_ONLY
