@@ -1,12 +1,24 @@
 steps:
+  # CI: IaC scan
   - name: python
     entrypoint: bash
     dir: terraform/gcp
     args:
       - -c
       - |
-          pip install checkov && \
-          checkov -d . --quiet --soft-fail
+        pip install checkov --quiet
+        # Fail the build if there are failed checks
+        checkov -d . --quiet
+
+  # CD: “fake deploy” – here only a dry run
+  - name: hashicorp/terraform:1.5.7   # official terraform Docker image
+    entrypoint: bash
+    dir: terraform/gcp
+    args:
+      - -c
+      - |
+        terraform init -input=false -backend=false
+        terraform plan -input=false
 
 options:
   logging: CLOUD_LOGGING_ONLY
