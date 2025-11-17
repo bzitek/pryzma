@@ -1,22 +1,46 @@
-resource "aws_instance" "web_host" {
-  # ec2 have plain text secrets in user data
-  ami           = "${var.ami}"
-  instance_type = "t2.nano"
+ resource "aws_instance" "web_host" {
+   ami           = "${var.ami}"
+   instance_type = "t2.nano"
 
-  vpc_security_group_ids = [
-  "${aws_security_group.web-node.id}"]
-  subnet_id = "${aws_subnet.web_subnet.id}"
-  user_data = <<EOF
-#! /bin/bash
-sudo apt-get update
-sudo apt-get install -y apache2
-sudo systemctl start apache2
-sudo systemctl enable apache2
-export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMAAA
-export AWS_SECRET_ACCESS_KEY=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
-export AWS_DEFAULT_REGION=us-west-2
-echo "<h1>Deployed via Terraform</h1>" | sudo tee /var/www/html/index.html
-EOF
+   vpc_security_group_ids = [
+   "${aws_security_group.web-node.id}"]
+   subnet_id = "${aws_subnet.web_subnet.id}"
+   iam_instance_profile = "${aws_iam_instance_profile.web_profile.name}" 
+-  user_data = <<-EOF
+-  metadata_options {
+-  http_endpoint = "enabled"
+-  http_tokens   = "required"   # IMDSv2 only
+-}
+-
+-root_block_device {
+-  encrypted   = true
+-  kms_key_id  = aws_kms_key.ebs.arn
+-  volume_type = "gp3"
+-  # volume_size = 8 # optional
+-}
+-#!/bin/bash
++  # ✅ IMDSv2 – required tokens
++  metadata_options {
++    http_endpoint = "enabled"
++    http_tokens   = "required"
++  }
++
++  # ✅ Encrypted root volume (uses AWS-managed EBS key unless you define a CMK)
++  root_block_device {
++    encrypted   = true
++    volume_type = "gp3"
++    # kms_key_id  = aws_kms_key.ebs.arn  # only if you actually defined this key
++    # volume_size = 8
++  }
++
++  user_data = <<-EOF
++#!/bin/bash
+ apt-get update -y
+ apt-get install -y apache2
+ systemctl enable --now apache2
+ echo "<h1>Deployed via Terraform</h1>" > /var/www/html/index.html
+ EOF
+
   tags = merge({
     Name = "${local.resource_prefix.value}-ec2"
     }, {
@@ -34,7 +58,8 @@ EOF
 resource "aws_ebs_volume" "web_host_storage" {
   # unencrypted volume
   availability_zone = "${var.region}a"
-  #encrypted         = false  # Setting this causes the volume to be recreated on apply 
+  #encrypted         = true
+  kms_key_id = aws_kms_key.ebs.arn
   size = 1
   tags = merge({
     Name = "${local.resource_prefix.value}-ebs"
@@ -83,13 +108,6 @@ resource "aws_security_group" "web-node" {
   ingress {
     from_port = 80
     to_port   = 80
-    protocol  = "tcp"
-    cidr_blocks = [
-    "0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 22
-    to_port   = 22
     protocol  = "tcp"
     cidr_blocks = [
     "0.0.0.0/0"]

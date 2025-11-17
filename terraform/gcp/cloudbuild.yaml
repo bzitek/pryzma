@@ -1,0 +1,12 @@
+steps:
+- name: python
+  entrypoint: bash
+  dir: terraform/gcp
+  args:
+    - -c
+    - |
+        pip install checkov --quiet
+        checkov -d . --quiet --soft-fail
+
+options:
+  logging: CLOUD_LOGGING_ONLY
