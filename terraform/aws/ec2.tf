@@ -67,7 +67,7 @@ resource "aws_ebs_snapshot" "example_snapshot" {
     yor_trace            = "c1008080-ec2f-4512-a0d0-2e9330aa58f0"
   })
 }
-
+//pr to master
 resource "aws_volume_attachment" "ebs_att" {
   device_name = "/dev/sdh"
   volume_id   = "${aws_ebs_volume.web_host_storage.id}"
